@@ -33,4 +33,15 @@ def classify_hand_gesture(landmarks):
                   landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP],
                   landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]]
 
-    knuckles = [landmarks.landmark[mp_hands.Hand
+    knuckles = [landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP],
+                landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP],
+                landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP],
+                landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]]
+
+    # Determine if the hand is open (fingertips above knuckles)
+    open_fingers = sum(1 for fingertip, knuckle in zip(fingertips, knuckles) if fingertip.y < knuckle.y)
+
+    if open_fingers >= 3:
+        return "Hand Open"
+    else:
+        return "Hand Closed"
