@@ -1,48 +1,30 @@
 import sys
 import os
 import threading
-from tkinter import Tk, Button
+from tkinter import Tk
 
-# Add the parent directory to the system path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the parent directory of the current file to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from hand_tracker import run_tracker_window  # Correct import
+import hand_tracker  # Now Python should be able to find hand_tracker.py
 
 class HandTrackerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Hand Tracker GUI")
-        self.is_running = False
+        self.root.title("Hand Tracker - Live Feed")
 
-        # Configure the window size
-        self.root.geometry("400x300")
-
-        # Start Button
-        self.start_button = Button(root, text="Start Hand Tracker", command=self.start_tracking, 
-                                   height=2, width=20, bg="lightgreen", font=("Helvetica", 12))
-        self.start_button.pack(pady=20)
-
-        # Exit Button (at the bottom)
-        self.exit_button = Button(root, text="Exit", command=self.exit_app, 
-                                  height=2, width=20, bg="lightblue", font=("Helvetica", 12))
-        self.exit_button.pack(side="bottom", pady=20)
+        # Open the hand tracking window in a new thread
+        self.thread = threading.Thread(target=hand_tracker.run_tracker_window)
+        self.thread.start()
 
         # Ensure proper closure when the window is closed
         self.root.protocol("WM_DELETE_WINDOW", self.exit_app)
 
-    def start_tracking(self):
-        """Start the hand tracking in a new window."""
-        if not self.is_running:
-            self.is_running = True
-            self.start_button.config(state="disabled")
-            
-            # Open the hand tracking window
-            run_tracker_window()
-
     def exit_app(self):
         """Close the application safely."""
+        if self.thread and self.thread.is_alive():
+            self.thread.join()  # Wait for the thread to stop
         self.root.quit()  # Close the tkinter app
-
 
 if __name__ == "__main__":
     root = Tk()
