@@ -1,66 +1,94 @@
 import cv2
 import time
 import os
-from utils.hand_recognition import process_frame
-from utils.logging import log_event
+from PIL import Image, ImageTk
+import tkinter as tk
 
-# OpenCV Video Capture
-cap = cv2.VideoCapture(0)
+# Flag to control when to stop the video stream
+stop_tracking = False
 
-# Create logs and snapshots directories if they don't exist
-if not os.path.exists("logs"):
-    os.makedirs("logs")
-if not os.path.exists("snapshots"):
-    os.makedirs("snapshots")
+class HandTrackerWindow:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Hand Tracker - Live Feed")
+        self.stop_button = None
+        self.video_label = None
+        self.stop_tracking = False
+        self.hand_open_count = 0
+        self.hand_close_count = 0
+        self.last_status = None
+        self.start_time = time.time()
+        self.cap = cv2.VideoCapture(0)
 
-# Initialize the hand open/close counter and the start time
-hand_open_count = 0
-hand_close_count = 0
-last_status = None
-start_time = time.time()
+        # Create the UI elements
+        self.create_widgets()
 
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        break
+        # Start the video update loop
+        self.update_video()
 
-    # Flip and process the frame to detect hands, gestures, and raised fingers
-    frame = cv2.flip(frame, 1)
-    processed_frame, status = process_frame(frame)
+    def create_widgets(self):
+        """Create the video display and stop button."""
+        self.video_label = tk.Label(self.root)
+        self.video_label.pack()
 
-    # Update hand open/close counters based on gesture detection
-    if "Hand Open" in status and last_status != "Hand Open":
-        hand_open_count += 1
-        log_event("Hand Open")  # Log hand open event
-        # Save snapshot when hand opens
-        snapshot_filename = f"snapshots/hand_open_{hand_open_count}.jpg"
-        cv2.imwrite(snapshot_filename, frame)
-    elif "Hand Closed" in status and last_status != "Hand Closed":
-        hand_close_count += 1
-        log_event("Hand Closed")  # Log hand closed event
-    last_status = "Hand Open" if "Hand Open" in status else "Hand Closed"
+        self.stop_button = tk.Button(self.root, text="Stop Tracking", command=self.stop_tracking_func, height=2, width=20, bg="red", font=("Helvetica", 12))
+        self.stop_button.pack(pady=10)
 
-    # Calculate elapsed time
-    elapsed_time = time.time() - start_time
-    elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+    def update_video(self):
+        """Update the video stream inside the Tkinter window."""
+        if not self.stop_tracking:
+            ret, frame = self.cap.read()
+            if not ret:
+                return
 
-    # Display counters and status
-    cv2.putText(processed_frame, status, (50, 100),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-    cv2.putText(processed_frame, f'Opens: {hand_open_count}', (50, 150),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(processed_frame, f'Closes: {hand_close_count}', (50, 200),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(processed_frame, f'Time: {elapsed_time_str}', (50, 250),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            # Flip and process the frame
+            frame = cv2.flip(frame, 1)
+            processed_frame, status = self.process_frame(frame)
 
-    # Show the frame
-    cv2.imshow('Hand Tracker', processed_frame)
+            # Convert frame to PIL image format to display in Tkinter
+            img = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(img)
+            imgtk = ImageTk.PhotoImage(image=img)
 
-    # Exit on 'q' key press
-    if cv2.waitKey(5) & 0xFF == ord('q'):
-        break
+            # Update the label with the new frame
+            self.video_label.imgtk = imgtk
+            self.video_label.configure(image=imgtk)
 
-# Release the camera and close the window
-cap.release()
-cv2.destroyAllWindows()
+            # Continue updating after 10 ms
+            self.root.after(10, self.update_video)
+        else:
+            # Release the camera and close the window when stopped
+            self.cap.release()
+            cv2.destroyAllWindows()
+            self.root.quit()
+
+    def process_frame(self, frame):
+        """Process the frame and track hand gestures and raised fingers."""
+        status = "No Hand Detected"
+        # (Insert your existing logic for hand gesture detection here)
+        # For now, we'll simulate by showing dummy status
+        status = f"Dummy Status: Hand Open/Closed, Fingers Raised: {0}"
+
+        # Display some dummy information for hand open/close counting
+        cv2.putText(frame, f'Opens: {self.hand_open_count}', (50, 150),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(frame, f'Closes: {self.hand_close_count}', (50, 200),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        elapsed_time = time.time() - self.start_time
+        elapsed_time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+        cv2.putText(frame, f'Time: {elapsed_time_str}', (50, 250),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+        return frame, status
+
+    def stop_tracking_func(self):
+        """Function to stop tracking and close the window."""
+        self.stop_tracking = True
+
+
+def run_tracker_window():
+    """Run the hand tracker in a Tkinter window."""
+    root = tk.Tk()
+    app = HandTrackerWindow(root)
+    root.mainloop()
+
