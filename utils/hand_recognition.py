@@ -1,9 +1,14 @@
 import cv2
 import mediapipe as mp
+import math
 
 # Initialize MediaPipe components
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
+
+def calculate_distance(point1, point2):
+    """Helper function to calculate the Euclidean distance between two points."""
+    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
 
 # Hand recognition logic
 def process_frame(frame):
@@ -34,46 +39,69 @@ def process_frame(frame):
         return frame, status
 
 def classify_hand_gesture(landmarks):
-    """Classifies whether the hand is open or closed."""
-    # Check if fingertips are above knuckles (open hand gesture)
-    fingertips = [landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP],
-                  landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
-                  landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP],
-                  landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]]
+    """Classifies whether the hand is open or closed with refined thumb logic."""
+    
+    # Calculate the center of the palm (average of wrist, middle MCP, and index MCP)
+    palm_center = landmarks.landmark[mp_hands.HandLandmark.WRIST]
 
-    knuckles = [landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP],
-                landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP],
-                landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP],
-                landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]]
+    # Thumb-specific detection
+    thumb_tip = landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+    thumb_ip = landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
+    
+    # Calculate distance between thumb tip/IP and palm center
+    thumb_distance = calculate_distance(thumb_tip, palm_center)
+    thumb_folded = thumb_distance < calculate_distance(thumb_ip, palm_center)  # Thumb is considered closed if it's folded inwards
 
-    open_fingers = sum(1 for fingertip, knuckle in zip(fingertips, knuckles) if fingertip.y < knuckle.y)
+    # Check how many fingers are open (excluding the thumb)
+    finger_tips = [landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP],
+                   landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
+                   landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP],
+                   landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]]
+    
+    finger_knuckles = [landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP],
+                       landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP],
+                       landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP],
+                       landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]]
+    
+    open_fingers = sum(1 for tip, knuckle in zip(finger_tips, finger_knuckles) if tip.y < knuckle.y)
 
-    if open_fingers >= 3:
+    # Add thumb status to the open finger count
+    if not thumb_folded:
+        open_fingers += 1
+
+    # Classify hand status based on open fingers
+    if open_fingers == 0:
+        return "Fist Closed"
+    elif open_fingers >= 3:
         return "Hand Open"
     else:
-        return "Hand Closed"
+        return "Partially Open Hand"
 
 def count_raised_fingers(landmarks):
-    """Counts how many fingers are raised based on the landmark positions."""
+    """Refined method to count how many fingers are raised with thumb consideration."""
     # Define the landmarks for the tips of each finger
-    finger_tips = [mp_hands.HandLandmark.THUMB_TIP,
-                   mp_hands.HandLandmark.INDEX_FINGER_TIP,
-                   mp_hands.HandLandmark.MIDDLE_FINGER_TIP,
-                   mp_hands.HandLandmark.RING_FINGER_TIP,
-                   mp_hands.HandLandmark.PINKY_TIP]
+    finger_tips = [
+        mp_hands.HandLandmark.THUMB_TIP,
+        mp_hands.HandLandmark.INDEX_FINGER_TIP,
+        mp_hands.HandLandmark.MIDDLE_FINGER_TIP,
+        mp_hands.HandLandmark.RING_FINGER_TIP,
+        mp_hands.HandLandmark.PINKY_TIP
+    ]
 
     # Define the landmarks for the knuckles of each finger
-    finger_knuckles = [mp_hands.HandLandmark.THUMB_IP,
-                       mp_hands.HandLandmark.INDEX_FINGER_MCP,
-                       mp_hands.HandLandmark.MIDDLE_FINGER_MCP,
-                       mp_hands.HandLandmark.RING_FINGER_MCP,
-                       mp_hands.HandLandmark.PINKY_MCP]
+    finger_knuckles = [
+        mp_hands.HandLandmark.THUMB_IP,
+        mp_hands.HandLandmark.INDEX_FINGER_MCP,
+        mp_hands.HandLandmark.MIDDLE_FINGER_MCP,
+        mp_hands.HandLandmark.RING_FINGER_MCP,
+        mp_hands.HandLandmark.PINKY_MCP
+    ]
 
     raised_fingers = 0
 
-    # Check each finger: if the tip is above the knuckle, consider the finger raised
+    # Use more sophisticated distance threshold for determining raised fingers
     for tip, knuckle in zip(finger_tips, finger_knuckles):
-        if landmarks.landmark[tip].y < landmarks.landmark[knuckle].y:  # Tip is higher than the knuckle
+        if landmarks.landmark[tip].y < landmarks.landmark[knuckle].y and abs(landmarks.landmark[tip].x - landmarks.landmark[knuckle].x) < 0.1:  # Tip is higher and close to the knuckle horizontally
             raised_fingers += 1
 
     return raised_fingers
