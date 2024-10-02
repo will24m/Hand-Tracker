@@ -22,6 +22,7 @@ def run_tracker():
         cv2.imshow("Hand Tracker", frame)
 
         # Press 'q' to exit
+        #sdfs
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
