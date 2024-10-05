@@ -1,91 +1,60 @@
-# First, we need to load some special tools or libraries that help us work with images and videos.
-# Think of these libraries like extra tools in a toolbox that can do specific jobs really well.
-# We are using 'cv2', which is part of OpenCV, a library that helps us work with live video from a camera.
-import cv2
+# Importing necessary libraries for working with video and image processing.
+import cv2  # OpenCV library helps us work with video streams and images.
+from utils.hand_recognition import process_frame  # Custom function to analyze each frame and detect hand gestures.
 
-# We are also using a function called 'process_frame' from another file (hand_recognition.py).
-# This function helps us analyze the video and figure out where the hand is and what it’s doing.
-from utils.hand_recognition import process_frame
-
-# Now we define a function called 'run_tracker'. A function is like a recipe or a set of instructions for the computer to follow.
-# This function's job is to turn on your camera, process the video to detect hands, and show the result on the screen.
+# Function that starts the hand tracker.
 def run_tracker():
-    # First, we need to tell the computer to start using the camera. 
-    # We use 'cv2.VideoCapture(0)' to start capturing video from the default camera (usually the webcam).
-    # The '0' tells the computer to use the default or built-in camera. 
-    cap = cv2.VideoCapture(0)  # 'cap' is short for 'capture'. This variable will be used to interact with the camera.
+    # Start capturing video from the default camera (0 refers to the default camera, usually the webcam).
+    # The 'cap' object will be used to interact with the camera.
+    cap = cv2.VideoCapture(0)  # VideoCapture(0) opens the default camera.
 
-    # Next, we need to check if the camera was successfully turned on.
-    # Sometimes, there could be a problem with the camera (maybe it's not connected or there’s an error).
-    # So we ask the computer to check if the camera is working with 'cap.isOpened()'.
-    if not cap.isOpened():  # If the camera isn't working, this part will run.
-        # If the camera doesn't work, we want to print a message telling the user something went wrong.
-        print("Error: Could not open video capture.")  # This prints a helpful message to the screen if there's an error.
-        # Since the camera isn't working, we will stop running the rest of the function.
-        return  # 'return' stops the function from doing anything else if there's an error.
+    # Check if the camera was successfully opened. If not, display an error message and exit the function.
+    if not cap.isOpened():  # If the camera couldn't be accessed...
+        print("Error: Could not open video capture.")  # Let the user know there's an issue with the camera.
+        return  # Exit the function as there's no point in continuing without the camera.
 
-    # Now we enter a loop, which means we will do the same steps over and over again until we decide to stop.
-    # In this case, the loop will keep capturing video frames (like a series of pictures) from the camera.
-    # Each frame will be processed one by one to detect a hand, and the result will be shown on the screen.
+    # Display a message that the video stream has started.
+    print("Video stream started. Press 'q' to exit.")
+
+    # We enter a loop to continuously capture and process each video frame until the user decides to stop.
+    # This loop will run indefinitely until broken by the user pressing 'q'.
     while True:
-        # 'cap.read()' is used to capture a single frame from the video.
-        # The frame is like a picture that we process and display.
-        # 'ret' is a boolean (True or False) that tells us if the frame was captured successfully.
-        # 'frame' is the actual image that we will work with.
-        ret, frame = cap.read()  # This line captures one frame from the video feed.
+        # Capture a single frame from the video stream.
+        ret, frame = cap.read()  # 'ret' is a boolean (True/False) indicating if the capture was successful, 'frame' is the image captured.
 
-        # We need to check if the frame was successfully captured.
-        # If not, that means something went wrong while getting the video from the camera.
-        # So if 'ret' is False, it means we failed to capture the frame.
-        if not ret:
-            # If we couldn't capture the frame, we print a message to let the user know.
-            print("Failed to capture frame")  # This message will appear if there was a problem.
-            break  # 'break' stops the loop, meaning we won't keep trying to capture more frames if there's a problem.
+        # If the frame couldn't be captured for some reason, print an error message and break the loop.
+        if not ret:  # If 'ret' is False, something went wrong with capturing the video frame.
+            print("Failed to capture frame")  # Let the user know something went wrong.
+            break  # Exit the loop.
 
-        # Now we need to process the frame we just captured.
-        # This is where the magic happens! We send the frame (the image) to the 'process_frame' function,
-        # which analyzes the image to detect hands and find out if they are open, closed, or how many fingers are raised.
-        # The function returns two things: 
-        # - The processed 'frame' (image) with any drawings on it, like the hand landmarks or connections.
-        # - The 'status', which is a message describing what the hand is doing (e.g., "Hand Open", "Fingers Raised: 2").
-        frame, status = process_frame(frame)  # 'process_frame' does all the hard work of figuring out what's in the frame.
+        # Process the captured frame using the hand recognition function to detect hands and gestures.
+        # The 'process_frame' function returns two values:
+        # - A processed frame with annotations (like hand landmarks) drawn on it.
+        # - A status message (e.g., "Hand Open" or "Fingers Raised: 3") describing what the hand is doing.
+        frame, status = process_frame(frame)  # Process the frame for hand detection and get the status.
 
-        # We want to show the user what the hand is doing in real-time.
-        # So we will write the 'status' (the message about what the hand is doing) on top of the video frame.
-        # To do this, we use 'cv2.putText()', which allows us to add text to the image.
-        # Here’s what each part does:
-        # - 'frame': The image where we want to write the text.
-        # - 'status': The message we want to display (like "Hand Open" or "Fingers Raised: 3").
-        # - (10, 30): The position (x, y) where the text will appear. This is in pixels, with (10, 30) being near the top-left.
-        # - 'cv2.FONT_HERSHEY_SIMPLEX': This is the font style for the text. It's just a simple font.
-        # - 1: The size of the text.
-        # - (0, 255, 0): This is the color of the text, using BGR format (blue, green, red). (0, 255, 0) is green.
-        # - 2: The thickness of the text.
-        cv2.putText(frame, status, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # This writes the status on the video frame.
+        # Add the status message (e.g., "Hand Open") to the frame, so the user can see it in real-time.
+        # We're placing the message at position (10, 30) on the video feed using green text.
+        cv2.putText(frame, status, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Write the status message on the frame.
 
-        # Now we need to show the user the video feed with the hand tracking information.
-        # 'cv2.imshow()' opens a window to display the image. The window will be called "Hand Tracker".
-        # The 'frame' is the image that will be shown in the window.
-        cv2.imshow("Hand Tracker", frame)  # This line shows the live video with hand tracking in a window.
+        # Show the frame in a window called "Hand Tracker". This will display the live video feed with the hand status.
+        cv2.imshow("Hand Tracker", frame)  # Display the frame with the hand tracking information.
 
-        # We need to give the user a way to stop the program.
-        # Here, we are waiting for the user to press a key on the keyboard.
-        # 'cv2.waitKey(1)' waits for a key press, and we check if the 'q' key was pressed.
-        # If the user presses 'q', we break out of the loop and stop capturing video.
-        # '& 0xFF' is a bitwise operation to ensure compatibility with different systems.
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # If the user presses 'q', this will trigger.
-            break  # 'break' means we will exit the loop and stop the program.
+        # Check if the user pressed the 'q' key to exit the program.
+        # 'cv2.waitKey(1)' waits for 1 millisecond and checks if a key is pressed.
+        # If the 'q' key is pressed, we break out of the loop and stop the program.
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Check if 'q' was pressed.
+            print("Exiting hand tracker...")  # Print a message indicating the tracker is closing.
+            break  # Exit the loop.
 
-    # Once the loop is done (because the user pressed 'q'), we need to clean up.
-    # First, we release the video capture object. This tells the camera to stop recording video.
-    cap.release()  # This stops the camera from capturing video.
+    # After the loop ends, we need to clean up.
+    # Release the video capture object (tell the camera to stop recording).
+    cap.release()  # Stop capturing video.
 
-    # Then we close any windows that were opened by OpenCV (like the "Hand Tracker" window).
-    # 'cv2.destroyAllWindows()' closes all the windows that were opened during the program.
-    cv2.destroyAllWindows()  # This closes any OpenCV windows that are open.
+    # Close any OpenCV windows that were opened during the program (like the "Hand Tracker" window).
+    cv2.destroyAllWindows()  # Close all OpenCV windows.
 
-# The last part of the code is a safety check.
-# It ensures that this script is being run directly (not imported into another program).
-# If this script is being run directly, it will call the 'run_tracker()' function to start the hand tracking.
+# The final part of the script ensures that this function only runs if the script is executed directly (not imported).
+# If this script is run directly, the 'run_tracker()' function will be called to start the hand tracker.
 if __name__ == "__main__":
-    run_tracker()  # This starts the hand tracker if the script is run directly.
+    run_tracker()  # Start the hand tracker if the script is being run directly.
