@@ -1,6 +1,7 @@
 # Importing necessary libraries for working with video and image processing.
 import cv2  # OpenCV library helps us work with video streams and images.
 from utils.hand_recognition import process_frame  # Custom function to analyze each frame and detect hand gestures.
+import time  # We use the 'time' library to calculate FPS (frames per second).
 
 # Function that starts the hand tracker.
 def run_tracker():
@@ -15,6 +16,9 @@ def run_tracker():
 
     # Display a message that the video stream has started.
     print("Video stream started. Press 'q' to exit.")
+
+    # Initialize variables for calculating FPS.
+    prev_time = 0  # 'prev_time' will store the time when the previous frame was processed.
 
     # We enter a loop to continuously capture and process each video frame until the user decides to stop.
     # This loop will run indefinitely until broken by the user pressing 'q'.
@@ -33,11 +37,20 @@ def run_tracker():
         # - A status message (e.g., "Hand Open" or "Fingers Raised: 3") describing what the hand is doing.
         frame, status = process_frame(frame)  # Process the frame for hand detection and get the status.
 
-        # Add the status message (e.g., "Hand Open") to the frame, so the user can see it in real-time.
+        # Get the current time for calculating FPS.
+        current_time = time.time()  # 'time.time()' returns the current time in seconds.
+
+        # Calculate FPS as the inverse of the time difference between the current and previous frames.
+        fps = 1 / (current_time - prev_time)  # FPS is the number of frames per second.
+        prev_time = current_time  # Update 'prev_time' to the current time for the next frame.
+
+        # Add the status message (e.g., "Hand Open") and FPS to the frame, so the user can see it in real-time.
         # We're placing the message at position (10, 30) on the video feed using green text.
         cv2.putText(frame, status, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Write the status message on the frame.
+        # Display FPS at the position (10, 60) using green text.
+        cv2.putText(frame, f'FPS: {int(fps)}', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Display FPS on the frame.
 
-        # Show the frame in a window called "Hand Tracker". This will display the live video feed with the hand status.
+        # Show the frame in a window called "Hand Tracker". This will display the live video feed with the hand status and FPS.
         cv2.imshow("Hand Tracker", frame)  # Display the frame with the hand tracking information.
 
         # Check if the user pressed the 'q' key to exit the program.
