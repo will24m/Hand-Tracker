@@ -49,7 +49,6 @@ abahahahahahahahahahahahaa
 Hand-Tracker/ ├── gui/ │ └── app_interface.py # Main interface controlling the hand tracker and managing the GUI. ├── utils/ │ └── hand_recognition.py # Contains logic for hand gesture detection and classification. ├── hand_tracker.py # Real-time video processing, hand tracking, and gesture detection. ├── gesture_log.txt # Logs all detected gestures with corresponding timestamps. ├── README.md # Comprehensive project documentation (this file!).
 
 yaml
-Copy code
 
 ---
 
