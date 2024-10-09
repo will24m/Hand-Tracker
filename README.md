@@ -19,7 +19,7 @@ This system captures live video, tracks the user's hand movements in real-time, 
 - **Gesture Logging**: Saves a detailed log of detected gestures along with timestamps to a file, useful for tracking user interactions.
   
 ---
-abahahahahaha
+abahahahahahahahahahahahaa
 ### 🛠 **Technologies Used:**
 1. **OpenCV**:
    - Provides real-time video processing and visual feedback.
