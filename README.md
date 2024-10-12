@@ -118,7 +118,7 @@ Mobile App Version: Extend the project to mobile devices using TensorFlow Lite.
 Contributing
 Contributions are welcome! Feel free to submit issues, fork the project, and send pull requests.
 
-License
+Licenses
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 Acknowledgements
