@@ -18,6 +18,7 @@ This system captures live video, tracks the user's hand movements in real-time, 
 - **Audio Feedback**: Uses text-to-speech to give real-time voice feedback when a gesture is detected, enhancing the interactive experience.
 - **Gesture Logging**: Saves a detailed log of detected gestures along with timestamps to a file, useful for tracking user interactions.
   
+
 ---
 
 
