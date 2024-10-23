@@ -6,7 +6,6 @@ Welcome to the **Hand Gesture Recognition System**, a powerful, open-source proj
 This system captures live video, tracks the user's hand movements in real-time, and classifies complex hand gestures such as "Thumbs Up", "Peace Sign", or "Fist". It also provides dynamic visual and audio feedback, gesture logging, and user-friendly features like gesture-based controls.
 
 ---
-
 ## Features
 
 ### 🚀 **Core Functionalities:**
