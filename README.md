@@ -19,7 +19,6 @@ This system captures live video, tracks the user's hand movements in real-time, 
 ---
 
 
-
 ### 🛠 **Technologies Used:**
 1. **OpenCV**:
    - Provides real-time video processing and visual feedback.
